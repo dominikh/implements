@@ -5,12 +5,6 @@ import (
 	"fmt"
 )
 
-type T int
-
-func (T) String() string {
-	return ""
-}
-
 type Interface struct {
 	Name       string
 	Underlying *types.Interface
