@@ -288,10 +288,12 @@ func main() {
 			}
 
 			// TODO DRY
-			if fnc, _ := types.MissingMethod(typ.Pointer.Underlying(), iface.Underlying); fnc == nil {
-				s := fmt.Sprintf("%s.%s",
-					iface.Obj.Pkg().Name(), iface.Name)
-				implementsPointer = append(implementsPointer, s)
+			if _, ok := typ.TypeName.Type().Underlying().(*types.Interface); !ok {
+				if fnc, _ := types.MissingMethod(typ.Pointer.Underlying(), iface.Underlying); fnc == nil {
+					s := fmt.Sprintf("%s.%s",
+						iface.Obj.Pkg().Name(), iface.Name)
+					implementsPointer = append(implementsPointer, s)
+				}
 			}
 		}
 
