@@ -266,7 +266,8 @@ func main() {
 				continue
 			}
 
-			if typ.Name() == iface.Name {
+			if typ.Object.Pkg() == iface.Obj.Pkg() && typ.Object.Name() == iface.Name {
+				// An interface will always implement itself, so skip those
 				continue
 			}
 
