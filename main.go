@@ -30,20 +30,23 @@ type Interface struct {
 	Obj        types.Object
 }
 
+type Type struct {
+	Object   types.Object
+	TypeName *types.TypeName
+	Pointer  *types.Pointer
+}
+
 // getInterfaces extracts all the interfaces from the objects we
 // parsed.
-func getInterfaces(typs []types.Object) []Interface {
+func getInterfaces(typs []Type) []Interface {
 	var interfaces []Interface
 
-	for _, obj := range typs {
+	for _, typ := range typs {
 		// Only types, not variables/constants
-		if v, ok := obj.(*types.TypeName); ok {
-			// Only interfaces
-			if iface, ok := v.Type().Underlying().(*types.Interface); ok {
-				interfaces = append(interfaces, Interface{obj.Name(), iface, obj})
-			}
+		// Only interfaces
+		if iface, ok := typ.TypeName.Type().Underlying().(*types.Interface); ok {
+			interfaces = append(interfaces, Interface{typ.Object.Name(), iface, typ.Object})
 		}
-
 	}
 
 	return interfaces
@@ -181,8 +184,8 @@ func (ctx *Context) importer(imports map[string]*types.Package, path string) (pk
 	return pkg, nil
 }
 
-func (ctx *Context) getTypes(paths ...string) []types.Object {
-	var typs []types.Object
+func (ctx *Context) getTypes(paths ...string) []Type {
+	var typs []Type
 
 	for _, path := range paths {
 		buildPkg, err := build.Import(path, ".", 0)
@@ -235,8 +238,12 @@ func (ctx *Context) getTypes(paths ...string) []types.Object {
 			obj := scope.At(i)
 
 			// Only types, not variables/constants
-			if _, ok := obj.(*types.TypeName); ok {
-				typs = append(typs, obj)
+			if typ, ok := obj.(*types.TypeName); ok {
+				typs = append(typs, Type{
+					Object:   obj,
+					TypeName: typ,
+					Pointer:  types.NewPointer(typ.Type()),
+				})
 			}
 
 		}
@@ -261,8 +268,11 @@ func main() {
 	interfaces := getInterfaces(stdlib)
 
 	for _, typ := range toCheck {
+		var implements []string
+		var implementsPointer []string
 		for _, iface := range interfaces {
 			if iface.Underlying.NumMethods() == 0 {
+				// Everything implements empty interfaces, skip those
 				continue
 			}
 
@@ -271,10 +281,31 @@ func main() {
 				continue
 			}
 
-			if fnc, _ := types.MissingMethod(typ.Type(), iface.Underlying); fnc == nil {
-				fmt.Printf("%s.%s implements %s.%s\n",
-					typ.(*types.TypeName).Pkg().Name(), typ.Name(),
+			if fnc, _ := types.MissingMethod(typ.Object.Type(), iface.Underlying); fnc == nil {
+				s := fmt.Sprintf("%s.%s",
 					iface.Obj.Pkg().Name(), iface.Name)
+				implements = append(implements, s)
+			}
+
+			// TODO DRY
+			if fnc, _ := types.MissingMethod(typ.Pointer.Underlying(), iface.Underlying); fnc == nil {
+				s := fmt.Sprintf("%s.%s",
+					iface.Obj.Pkg().Name(), iface.Name)
+				implementsPointer = append(implementsPointer, s)
+			}
+		}
+
+		if len(implements) > 0 {
+			fmt.Printf("%s.%s implements...\n", typ.TypeName.Pkg().Name(), typ.Object.Name())
+			for _, impl := range implements {
+				fmt.Printf("\t%s\n", impl)
+			}
+		}
+		// TODO DRY
+		if len(implementsPointer) > 0 {
+			fmt.Printf("*%s.%s implements...\n", typ.TypeName.Pkg().Name(), typ.Object.Name())
+			for _, impl := range implementsPointer {
+				fmt.Printf("\t%s\n", impl)
 			}
 		}
 	}
