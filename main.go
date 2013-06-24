@@ -200,7 +200,6 @@ func (ctx *Context) getTypes(paths ...string) []Type {
 		if buildPkg.Goroot {
 			// TODO what if the compiled package in GoRoot is
 			// outdated?
-			fmt.Println("GcImport", path)
 			pkg, err = types.GcImport(ctx.allImports, path)
 			if err != nil {
 				// TODO better error handling
