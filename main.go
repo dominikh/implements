@@ -253,6 +253,11 @@ func listErrors(errors []error) {
 	}
 }
 
+func doesImplement(typ types.Type, iface *types.Interface) bool {
+	fnc, _ := types.MissingMethod(typ, iface)
+	return fnc == nil
+}
+
 func main() {
 	if own == "" {
 		flag.Usage()
@@ -268,8 +273,8 @@ func main() {
 	interfaces := getInterfaces(stdlib)
 
 	for _, typ := range toCheck {
-		var implements []string
-		var implementsPointer []string
+		var implements []Interface
+		var implementsPointer []Interface
 		for _, iface := range interfaces {
 			if iface.Underlying.NumMethods() == 0 {
 				// Everything implements empty interfaces, skip those
@@ -281,33 +286,28 @@ func main() {
 				continue
 			}
 
-			if fnc, _ := types.MissingMethod(typ.Object.Type(), iface.Underlying); fnc == nil {
-				s := fmt.Sprintf("%s.%s",
-					iface.Obj.Pkg().Name(), iface.Name)
-				implements = append(implements, s)
+			if doesImplement(typ.Object.Type(), iface.Underlying) {
+				implements = append(implements, iface)
 			}
 
-			// TODO DRY
 			if _, ok := typ.TypeName.Type().Underlying().(*types.Interface); !ok {
-				if fnc, _ := types.MissingMethod(typ.Pointer.Underlying(), iface.Underlying); fnc == nil {
-					s := fmt.Sprintf("%s.%s",
-						iface.Obj.Pkg().Name(), iface.Name)
-					implementsPointer = append(implementsPointer, s)
+				if doesImplement(typ.Pointer.Underlying(), iface.Underlying) {
+					implementsPointer = append(implementsPointer, iface)
 				}
 			}
 		}
 
 		if len(implements) > 0 {
 			fmt.Printf("%s.%s implements...\n", typ.TypeName.Pkg().Name(), typ.Object.Name())
-			for _, impl := range implements {
-				fmt.Printf("\t%s\n", impl)
+			for _, iface := range implements {
+				fmt.Printf("\t%s.%s\n", iface.Obj.Pkg().Name(), iface.Name)
 			}
 		}
 		// TODO DRY
 		if len(implementsPointer) > 0 {
 			fmt.Printf("*%s.%s implements...\n", typ.TypeName.Pkg().Name(), typ.Object.Name())
-			for _, impl := range implementsPointer {
-				fmt.Printf("\t%s\n", impl)
+			for _, iface := range implementsPointer {
+				fmt.Printf("\t%s.%s\n", iface.Obj.Pkg().Name(), iface.Name)
 			}
 		}
 	}
