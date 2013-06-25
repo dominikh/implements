@@ -50,6 +50,5 @@ to be made:
 
 - Cleaner code. Right now it's a mixture of stuff put together until
   it works
-- Reverse check: By what types are interfaces implemented?
 - Filtering to specific types from packages
 - The names of flags will probably change as more are added
