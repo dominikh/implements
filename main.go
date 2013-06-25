@@ -123,7 +123,6 @@ func (ctx *Context) importer(imports map[string]*types.Package, path string) (pk
 	}
 
 	// TODO check if the .a file is up to date and use it instead
-	fmt.Println("we have to build", path, "ourselves")
 	fileSet := token.NewFileSet()
 
 	isGoFile := func(d os.FileInfo) bool {
@@ -184,14 +183,14 @@ func (ctx *Context) importer(imports map[string]*types.Package, path string) (pk
 	return pkg, nil
 }
 
-func (ctx *Context) getTypes(paths ...string) []Type {
+func (ctx *Context) getTypes(paths ...string) ([]Type, []error) {
+	var errors []error
 	var typs []Type
 
 	for _, path := range paths {
 		buildPkg, err := build.Import(path, ".", 0)
 		if err != nil {
-			// FIXME better error handling
-			fmt.Printf("Couldn't import %s: %s\n", path, err)
+			errors = append(errors, fmt.Errorf("Couldn't import %s: %s", path, err))
 			continue
 		}
 		fset := token.NewFileSet()
@@ -202,22 +201,18 @@ func (ctx *Context) getTypes(paths ...string) []Type {
 			// outdated?
 			pkg, err = types.GcImport(ctx.allImports, path)
 			if err != nil {
-				// TODO better error handling
-				fmt.Printf("Couldn't import %s: %s\n", path, err)
+				errors = append(errors, fmt.Errorf("Couldn't import %s: %s", path, err))
 				continue
 			}
 		} else {
-			fmt.Println("Manual parsing", path)
 			if len(buildPkg.GoFiles) == 0 {
-				// TODO proper error handling
-				fmt.Printf("Couldn't parse %s: No go files\n", path)
+				errors = append(errors, fmt.Errorf("Couldn't parse %s: No go files", path))
 				continue
 			}
 			for _, file := range buildPkg.GoFiles {
 				astFile, err := parseFile(fset, filepath.Join(buildPkg.Dir, file))
 				if err != nil {
-					// TODO proper error handling
-					fmt.Printf("Couldn't parse %s: %s", err)
+					errors = append(errors, fmt.Errorf("Couldn't parse %s: %s", err))
 					continue
 				}
 				astFiles = append(astFiles, astFile)
@@ -225,11 +220,9 @@ func (ctx *Context) getTypes(paths ...string) []Type {
 
 			pkg, err = check(ctx, astFiles[0].Name.Name, fset, astFiles)
 			if err != nil {
-				// FIXME better error handling
-				fmt.Printf("Couldn't parse %s: %s\n", path, err)
+				errors = append(errors, fmt.Errorf("Couldn't parse %s: %s\n", path, err))
 				continue
 			}
-			fmt.Println(pkg.Name(), pkg.Complete())
 		}
 
 		scope := pkg.Scope()
@@ -247,11 +240,17 @@ func (ctx *Context) getTypes(paths ...string) []Type {
 
 		}
 	}
-	return typs
+	return typs, errors
 }
 
 func check(ctx *Context, name string, fset *token.FileSet, astFiles []*ast.File) (pkg *types.Package, err error) {
 	return ctx.context.Check(name, fset, astFiles...)
+}
+
+func listErrors(errors []error) {
+	for _, err := range errors {
+		fmt.Println(err)
+	}
 }
 
 func main() {
@@ -261,8 +260,10 @@ func main() {
 	}
 
 	ctx := NewContext()
-	stdlib := ctx.getTypes(matchPackages(universe)...)
-	toCheck := ctx.getTypes(matchPackages(own)...)
+	stdlib, errs := ctx.getTypes(matchPackages(universe)...)
+	listErrors(errs)
+	toCheck, errs := ctx.getTypes(matchPackages(own)...)
+	listErrors(errs)
 
 	interfaces := getInterfaces(stdlib)
 
