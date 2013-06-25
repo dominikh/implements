@@ -258,19 +258,8 @@ func doesImplement(typ types.Type, iface *types.Interface) bool {
 	return fnc == nil
 }
 
-func main() {
-	if own == "" {
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	ctx := NewContext()
-	stdlib, errs := ctx.getTypes(matchPackages(universe)...)
-	listErrors(errs)
-	toCheck, errs := ctx.getTypes(matchPackages(own)...)
-	listErrors(errs)
-
-	interfaces := getInterfaces(stdlib)
+func listImplementedInterfaces(universe, toCheck []Type) {
+	interfaces := getInterfaces(universe)
 
 	for _, typ := range toCheck {
 		var implements []Interface
@@ -311,4 +300,56 @@ func main() {
 			}
 		}
 	}
+}
+
+func listImplementers(universe, toCheck []Type) {
+	interfaces := getInterfaces(universe)
+
+	for _, iface := range interfaces {
+		var implementedBy []string
+		for _, typ := range toCheck {
+			if iface.Underlying.NumMethods() == 0 {
+				// Everything implements empty interfaces, skip those
+				continue
+			}
+
+			if typ.Object.Pkg() == iface.Obj.Pkg() && typ.Object.Name() == iface.Name {
+				// An interface will always implement itself, so skip those
+				continue
+			}
+
+			if doesImplement(typ.Object.Type(), iface.Underlying) {
+				implementedBy = append(implementedBy, fmt.Sprintf("%s.%s", typ.TypeName.Pkg().Name(), typ.Object.Name()))
+			}
+
+			if _, ok := typ.TypeName.Type().Underlying().(*types.Interface); !ok {
+				if doesImplement(typ.Pointer.Underlying(), iface.Underlying) {
+					implementedBy = append(implementedBy, fmt.Sprintf("*%s.%s", typ.TypeName.Pkg().Name(), typ.Object.Name()))
+				}
+			}
+		}
+
+		if len(implementedBy) > 0 {
+			fmt.Printf("%s.%s is implemented by...\n", iface.Obj.Pkg().Name(), iface.Name)
+			for _, s := range implementedBy {
+				fmt.Printf("\t%s\n", s)
+			}
+		}
+	}
+}
+
+func main() {
+	if own == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	ctx := NewContext()
+	universe, errs := ctx.getTypes(matchPackages(universe)...)
+	listErrors(errs)
+	toCheck, errs := ctx.getTypes(matchPackages(own)...)
+	listErrors(errs)
+
+	// listImplementedInterfaces(universe, toCheck)
+	listImplementers(universe, toCheck)
 }
