@@ -287,16 +287,16 @@ func listImplementedInterfaces(universe, toCheck []Type) {
 		}
 
 		if len(implements) > 0 {
-			fmt.Printf("%s.%s implements...\n", typ.TypeName.Pkg().Name(), typ.Object.Name())
+			fmt.Printf("%s.%s implements...\n", typ.TypeName.Pkg().Path(), typ.Object.Name())
 			for _, iface := range implements {
-				fmt.Printf("\t%s.%s\n", iface.Obj.Pkg().Name(), iface.Name)
+				fmt.Printf("\t%s.%s\n", iface.Obj.Pkg().Path(), iface.Name)
 			}
 		}
 		// TODO DRY
 		if len(implementsPointer) > 0 {
-			fmt.Printf("*%s.%s implements...\n", typ.TypeName.Pkg().Name(), typ.Object.Name())
+			fmt.Printf("*%s.%s implements...\n", typ.TypeName.Pkg().Path(), typ.Object.Name())
 			for _, iface := range implementsPointer {
-				fmt.Printf("\t%s.%s\n", iface.Obj.Pkg().Name(), iface.Name)
+				fmt.Printf("\t%s.%s\n", iface.Obj.Pkg().Path(), iface.Name)
 			}
 		}
 	}
@@ -319,12 +319,12 @@ func listImplementers(universe, toCheck []Type) {
 			}
 
 			if doesImplement(typ.Object.Type(), iface.Underlying) {
-				implementedBy = append(implementedBy, fmt.Sprintf("%s.%s", typ.TypeName.Pkg().Name(), typ.Object.Name()))
+				implementedBy = append(implementedBy, fmt.Sprintf("%s.%s", typ.TypeName.Pkg().Path(), typ.Object.Name()))
 			}
 
 			if _, ok := typ.TypeName.Type().Underlying().(*types.Interface); !ok {
 				if doesImplement(typ.Pointer.Underlying(), iface.Underlying) {
-					implementedBy = append(implementedBy, fmt.Sprintf("*%s.%s", typ.TypeName.Pkg().Name(), typ.Object.Name()))
+					implementedBy = append(implementedBy, fmt.Sprintf("*%s.%s", typ.TypeName.Pkg().Path(), typ.Object.Name()))
 				}
 			}
 		}
