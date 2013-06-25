@@ -16,12 +16,14 @@ var (
 	interfacesFrom string
 	typesFrom      string
 	reverse        bool
+	printHelp      bool
 )
 
 func init() {
-	flag.StringVar(&interfacesFrom, "interfaces", "std", "Comma-separated list of Which packages to scan for interfaces. Defaults to std.")
-	flag.StringVar(&typesFrom, "types", "", "Comma-separated list of packages whose types to check for implemented interfaces.")
+	flag.StringVar(&interfacesFrom, "interfaces", "std", "Comma-separated list of which packages to scan for interfaces. Defaults to std.")
+	flag.StringVar(&typesFrom, "types", "", "Comma-separated list of packages whose types to check for implemented interfaces. Required.")
 	flag.BoolVar(&reverse, "reverse", false, "Print 'implemented by' as opposed to 'implements' relations.")
+	flag.BoolVar(&printHelp, "help", false, "Print a help text and exit.")
 
 	flag.Parse()
 }
@@ -341,6 +343,40 @@ func listImplementers(universe, toCheck []Type) {
 }
 
 func main() {
+	if printHelp {
+		flag.Usage()
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr,
+			`implements is a tool that will tell you which types implement which
+interfaces, or alternatively by which types interfaces are
+implemented.
+
+You use it by specifying a set of packages to scan for interfaces and
+another set of packages to scan for types. The two sets can but don't
+have to overlap.
+
+When specifying packages, "std" will stand for all of the standard
+library. Also, the "..." pattern as understood by the go tool is
+supported as well.
+
+By default, implements will iterate all types and list the interfaces
+they implement. By supplying the -reverse flag, however, it will
+iterate all interfaces and list the types that implement the
+interfaces.
+
+Example: For all interfaces in the fmt package you want to know the
+types in the standard library that implement them:
+
+    implements -interfaces fmt -types std -reverse
+
+Another example: For all types in your own package you want to know
+which interfaces from the standard library they implement:
+
+    implements -interfaces std -types my/own/package`)
+
+		os.Exit(0)
+	}
+
 	if typesFrom == "" {
 		flag.Usage()
 		os.Exit(1)
