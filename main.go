@@ -15,11 +15,13 @@ import (
 var (
 	universe string
 	own      string
+	reverse  bool
 )
 
 func init() {
 	flag.StringVar(&universe, "universe", "std", "Comma-separated list of Which packages to scan for interfaces. Defaults to std.")
 	flag.StringVar(&own, "own", "", "Comma-separated list of packages whose types to check for implemented interfaces.")
+	flag.BoolVar(&reverse, "reverse", false, "Print 'implemented by' as opposed to 'implements' relations.")
 
 	flag.Parse()
 }
@@ -350,6 +352,9 @@ func main() {
 	toCheck, errs := ctx.getTypes(matchPackages(own)...)
 	listErrors(errs)
 
-	// listImplementedInterfaces(universe, toCheck)
-	listImplementers(universe, toCheck)
+	if reverse {
+		listImplementers(universe, toCheck)
+	} else {
+		listImplementedInterfaces(universe, toCheck)
+	}
 }
