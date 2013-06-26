@@ -231,7 +231,7 @@ func listImplementers(universe, toCheck []Type) {
 		}
 
 		if len(implementedBy) > 0 {
-			fmt.Printf("%s.%s is implemented by...\n", iface.Obj.Pkg().Name(), iface.Name)
+			fmt.Printf("%s.%s is implemented by...\n", iface.Obj.Pkg().Path(), iface.Name)
 			for _, s := range implementedBy {
 				fmt.Printf("\t%s\n", s)
 			}
