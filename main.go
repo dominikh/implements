@@ -111,7 +111,7 @@ pathLoop:
 			}
 		} else {
 			if len(buildPkg.GoFiles) == 0 {
-				errors = append(errors, fmt.Errorf("Couldn't parse %s: No go files", path))
+				errors = append(errors, fmt.Errorf("Couldn't parse %s: No (non cgo) Go files", path))
 				continue pathLoop
 			}
 			for _, file := range buildPkg.GoFiles {
