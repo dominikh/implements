@@ -91,6 +91,7 @@ func (ctx *Context) getTypes(paths ...string) ([]Type, []error) {
 	var errors []error
 	var typs []Type
 
+pathLoop:
 	for _, path := range paths {
 		buildPkg, err := build.Import(path, ".", 0)
 		if err != nil {
@@ -111,13 +112,13 @@ func (ctx *Context) getTypes(paths ...string) ([]Type, []error) {
 		} else {
 			if len(buildPkg.GoFiles) == 0 {
 				errors = append(errors, fmt.Errorf("Couldn't parse %s: No go files", path))
-				continue
+				continue pathLoop
 			}
 			for _, file := range buildPkg.GoFiles {
 				astFile, err := parseFile(fset, filepath.Join(buildPkg.Dir, file))
 				if err != nil {
 					errors = append(errors, fmt.Errorf("Couldn't parse %s: %s", err))
-					continue
+					continue pathLoop
 				}
 				astFiles = append(astFiles, astFile)
 			}
@@ -125,7 +126,7 @@ func (ctx *Context) getTypes(paths ...string) ([]Type, []error) {
 			pkg, err = check(ctx, astFiles[0].Name.Name, fset, astFiles)
 			if err != nil {
 				errors = append(errors, fmt.Errorf("Couldn't parse %s: %s\n", path, err))
-				continue
+				continue pathLoop
 			}
 		}
 
