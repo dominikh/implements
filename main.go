@@ -4,6 +4,8 @@ import (
 	"honnef.co/go/importer"
 
 	"code.google.com/p/go.tools/go/types"
+	"github.com/kisielk/gotool"
+
 	"flag"
 	"fmt"
 	"go/ast"
@@ -12,6 +14,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -280,9 +283,9 @@ which interfaces from the standard library they implement:
 	}
 
 	ctx := NewContext()
-	universe, errs := ctx.getTypes(matchPackages(interfacesFrom)...)
+	universe, errs := ctx.getTypes(gotool.ImportPaths(strings.Split(interfacesFrom, ","))...)
 	listErrors(errs)
-	toCheck, errs := ctx.getTypes(matchPackages(typesFrom)...)
+	toCheck, errs := ctx.getTypes(gotool.ImportPaths(strings.Split(typesFrom, ","))...)
 	listErrors(errs)
 
 	if reverse {
