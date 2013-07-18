@@ -149,7 +149,7 @@ pathLoop:
 }
 
 func check(ctx *Context, name string, fset *token.FileSet, astFiles []*ast.File) (pkg *types.Package, err error) {
-	return ctx.context.Check(name, fset, astFiles...)
+	return ctx.context.Check(name, fset, astFiles, nil)
 }
 
 func listErrors(errors []error) {
