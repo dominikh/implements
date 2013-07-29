@@ -131,8 +131,8 @@ pathLoop:
 		}
 
 		scope := pkg.Scope()
-		for i := 0; i < scope.NumEntries(); i++ {
-			obj := scope.At(i)
+		for _, n := range scope.Names() {
+			obj := scope.Lookup(n)
 
 			// Only types, not variables/constants
 			if typ, ok := obj.(*types.TypeName); ok {
