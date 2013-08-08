@@ -159,7 +159,7 @@ func listErrors(errors []error) {
 }
 
 func doesImplement(typ types.Type, iface *types.Interface) bool {
-	fnc, _ := types.MissingMethod(typ, iface)
+	fnc, _ := types.MissingMethod(typ, iface, true)
 	return fnc == nil
 }
 
