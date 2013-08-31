@@ -1,7 +1,7 @@
 package main
 
 import (
-	"honnef.co/go/importer"
+	"github.com/dominikh/go-importer"
 
 	"code.google.com/p/go.tools/go/types"
 	"github.com/kisielk/gotool"
