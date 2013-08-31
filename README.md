@@ -6,7 +6,7 @@ which types.
 
 ## Install
 
-    go get honnef.co/go/implements
+    go get github.com/dominikh/implements
 
 ## Usage
 
