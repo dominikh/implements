@@ -117,7 +117,7 @@ pathLoop:
 			for _, file := range buildPkg.GoFiles {
 				astFile, err := parseFile(fset, filepath.Join(buildPkg.Dir, file))
 				if err != nil {
-					errors = append(errors, fmt.Errorf("Couldn't parse %s: %s", err))
+					errors = append(errors, fmt.Errorf("Couldn't parse %s: %s", path, err))
 					continue pathLoop
 				}
 				astFiles = append(astFiles, astFile)
@@ -125,7 +125,7 @@ pathLoop:
 
 			pkg, err = check(ctx, astFiles[0].Name.Name, fset, astFiles)
 			if err != nil {
-				errors = append(errors, fmt.Errorf("Couldn't parse %s: %s\n", path, err))
+				errors = append(errors, fmt.Errorf("Couldn't parse %s: %s", path, err))
 				continue pathLoop
 			}
 		}
