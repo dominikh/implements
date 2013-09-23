@@ -9,11 +9,9 @@ import (
 	"flag"
 	"fmt"
 	"go/ast"
-	"go/build"
 	"go/parser"
 	"go/token"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -91,43 +89,11 @@ func (ctx *Context) getTypes(paths ...string) ([]Type, []error) {
 	var errors []error
 	var typs []Type
 
-pathLoop:
 	for _, path := range paths {
-		buildPkg, err := build.Import(path, ".", 0)
+		pkg, err := ctx.context.Import(ctx.allImports, path)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("Couldn't import %s: %s", path, err))
 			continue
-		}
-		fset := token.NewFileSet()
-		var astFiles []*ast.File
-		var pkg *types.Package
-		if buildPkg.Goroot {
-			// TODO what if the compiled package in GoRoot is
-			// outdated?
-			pkg, err = types.GcImport(ctx.allImports, path)
-			if err != nil {
-				errors = append(errors, fmt.Errorf("Couldn't import %s: %s", path, err))
-				continue
-			}
-		} else {
-			if len(buildPkg.GoFiles) == 0 {
-				errors = append(errors, fmt.Errorf("Couldn't parse %s: No (non cgo) Go files", path))
-				continue pathLoop
-			}
-			for _, file := range buildPkg.GoFiles {
-				astFile, err := parseFile(fset, filepath.Join(buildPkg.Dir, file))
-				if err != nil {
-					errors = append(errors, fmt.Errorf("Couldn't parse %s: %s", err))
-					continue pathLoop
-				}
-				astFiles = append(astFiles, astFile)
-			}
-
-			pkg, err = check(ctx, astFiles[0].Name.Name, fset, astFiles)
-			if err != nil {
-				errors = append(errors, fmt.Errorf("Couldn't parse %s: %s\n", path, err))
-				continue pathLoop
-			}
 		}
 
 		scope := pkg.Scope()
