@@ -177,13 +177,13 @@ func listImplementers(universe, toCheck []Type) {
 	interfaces := getInterfaces(universe)
 
 	for _, iface := range interfaces {
+		if iface.Underlying.NumMethods() == 0 {
+			// Everything implements empty interfaces, skip those
+			continue
+		}
+
 		var implementedBy []string
 		for _, typ := range toCheck {
-			if iface.Underlying.NumMethods() == 0 {
-				// Everything implements empty interfaces, skip those
-				continue
-			}
-
 			if typ.Object.Pkg() == iface.Obj.Pkg() && typ.Object.Name() == iface.Name {
 				// An interface will always implement itself, so skip those
 				continue
