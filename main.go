@@ -69,13 +69,16 @@ func parseFile(fset *token.FileSet, fileName string) (f *ast.File, err error) {
 }
 
 type Context struct {
+	importer   *importer.Importer
 	allImports map[string]*types.Package
 	context    types.Config
 }
 
 func NewContext() *Context {
-	importer := importer.NewImporter()
+	importer := importer.New()
+	importer.Config.UseGcFallback = true
 	ctx := &Context{
+		importer:   importer,
 		allImports: importer.Imports,
 		context: types.Config{
 			Import: importer.Import,
@@ -254,6 +257,14 @@ which interfaces from the standard library they implement:
 	listErrors(errs)
 	toCheck, errs := ctx.getTypes(gotool.ImportPaths(strings.Split(typesFrom, ","))...)
 	listErrors(errs)
+
+	if len(ctx.importer.Fallbacks) > 0 {
+		fmt.Fprintln(os.Stderr, "Relying on gc generated data for...")
+		for _, path := range ctx.importer.Fallbacks {
+			fmt.Fprintln(os.Stderr, path)
+		}
+		fmt.Fprintln(os.Stderr)
+	}
 
 	if reverse {
 		listImplementers(universe, toCheck)
