@@ -1,7 +1,7 @@
 package main
 
 import (
-	"honnef.co/go/importer"
+	importer "github.com/dominikh/go-importer"
 
 	"code.google.com/p/go.tools/go/types"
 	"github.com/kisielk/gotool"
@@ -74,7 +74,7 @@ type Context struct {
 }
 
 func NewContext() *Context {
-	importer := importer.NewImporter()
+	importer := importer.New()
 	ctx := &Context{
 		allImports: importer.Imports,
 		context: types.Config{
