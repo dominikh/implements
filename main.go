@@ -74,7 +74,7 @@ type Context struct {
 }
 
 func NewContext() *Context {
-	importer := importer.NewImporter()
+	importer := importer.New()
 	ctx := &Context{
 		allImports: importer.Imports,
 		context: types.Config{
