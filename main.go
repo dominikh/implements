@@ -1,4 +1,4 @@
-package main
+package main // import "honnef.co/go/implements"
 
 import (
 	"honnef.co/go/importer"
