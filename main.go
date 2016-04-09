@@ -1,18 +1,15 @@
 package main // import "honnef.co/go/implements"
 
 import (
-	"honnef.co/go/importer"
-
-	"github.com/kisielk/gotool"
-	"golang.org/x/tools/go/types"
-
 	"flag"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
+	"go/types"
 	"os"
 	"strings"
+
+	"golang.org/x/tools/go/loader"
+
+	"github.com/kisielk/gotool"
 )
 
 var (
@@ -59,47 +56,27 @@ func getInterfaces(typs []Type) []Interface {
 	return interfaces
 }
 
-func parseFile(fset *token.FileSet, fileName string) (f *ast.File, err error) {
-	astFile, err := parser.ParseFile(fset, fileName, nil, 0)
-	if err != nil {
-		return f, fmt.Errorf("could not parse: %s", err)
-	}
-
-	return astFile, nil
-}
-
 type Context struct {
-	importer   *importer.Importer
-	allImports map[string]*types.Package
-	context    types.Config
+	conf *loader.Config
 }
 
 func NewContext() *Context {
-	importer := importer.New()
-	importer.Config.UseGcFallback = true
-	ctx := &Context{
-		importer:   importer,
-		allImports: importer.Imports,
-		context: types.Config{
-			Import: importer.Import,
-		},
-	}
-
-	return ctx
+	return &Context{}
 }
 
-func (ctx *Context) getTypes(paths ...string) ([]Type, []error) {
-	var errors []error
+func (ctx *Context) getTypes(paths ...string) ([]Type, error) {
+	conf := &loader.Config{}
+	for _, path := range paths {
+		conf.Import(path)
+	}
+	lprog, err := conf.Load()
+	if err != nil {
+		return nil, err
+	}
 	var typs []Type
 
-	for _, path := range paths {
-		pkg, err := ctx.context.Import(ctx.allImports, path)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("Couldn't import %s: %s", path, err))
-			continue
-		}
-
-		scope := pkg.Scope()
+	for _, pkg := range lprog.InitialPackages() {
+		scope := pkg.Pkg.Scope()
 		for _, n := range scope.Names() {
 			obj := scope.Lookup(n)
 
@@ -114,17 +91,7 @@ func (ctx *Context) getTypes(paths ...string) ([]Type, []error) {
 
 		}
 	}
-	return typs, errors
-}
-
-func check(ctx *Context, name string, fset *token.FileSet, astFiles []*ast.File) (pkg *types.Package, err error) {
-	return ctx.context.Check(name, fset, astFiles, nil)
-}
-
-func listErrors(errors []error) {
-	for _, err := range errors {
-		fmt.Println(err)
-	}
+	return typs, nil
 }
 
 func doesImplement(typ types.Type, iface *types.Interface) bool {
@@ -253,17 +220,15 @@ which interfaces from the standard library they implement:
 	}
 
 	ctx := NewContext()
-	universe, errs := ctx.getTypes(gotool.ImportPaths(strings.Split(interfacesFrom, ","))...)
-	listErrors(errs)
-	toCheck, errs := ctx.getTypes(gotool.ImportPaths(strings.Split(typesFrom, ","))...)
-	listErrors(errs)
-
-	if len(ctx.importer.Fallbacks) > 0 {
-		fmt.Fprintln(os.Stderr, "Relying on gc generated data for...")
-		for _, path := range ctx.importer.Fallbacks {
-			fmt.Fprintln(os.Stderr, path)
-		}
-		fmt.Fprintln(os.Stderr)
+	universe, err := ctx.getTypes(gotool.ImportPaths(strings.Split(interfacesFrom, ","))...)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	toCheck, err := ctx.getTypes(gotool.ImportPaths(strings.Split(typesFrom, ","))...)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 
 	if reverse {
