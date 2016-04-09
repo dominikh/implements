@@ -1,3 +1,7 @@
+**This program has been deprecated. Consider using
+  [guru](https://godoc.org/golang.org/x/tools/cmd/guru) instead, which
+  can answer the same question as this tool, and many more.**
+
 # implements
 
 _implements_ is a command line tool that will tell you which types
